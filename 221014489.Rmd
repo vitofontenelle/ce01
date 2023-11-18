@@ -1,0 +1,213 @@
+---
+title: "Lista 03: gráficos básicos com ggplot2"
+author: "Vito Fontenelle"
+date: "11 de novembro, 2023"
+output:
+  html_document:
+    css: ./ava.css
+    highlight: pygments
+    theme: cerulean
+    charset: utf-8
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+library(tidyverse)
+library(ggplot2)
+library(dplyr)
+```
+# Parte 1
+
+1.
+
+```{r}
+
+elephant <- read.csv("/home/vitof/Documents/codigos/rfiles/ce01/lista_3/ElephantsMF.csv")
+
+```
+
+2.
+
+```{r}
+head(elephant, n=10)
+tail(elephant, n=10)
+```
+
+3.
+
+```{r}
+graph1 <- ggplot(elephant, aes(x = Age, y = Height))
+
+graph1 + geom_point(aes(color = Sex)) + scale_color_manual(values = c("F"="#db5461", "M"="#3d5467"))
+```
+
+
+Existe associação entre as variáveis sexo e altura, os machos são mais altos que as fêmeas. Os elefantes quando muito novos(menos de 2 anos) parecem ter a mesma altura, com o aumento da idade a diferença de altura entre macho e fêmea também aumenta.
+
+4.
+
+```{r}
+mean(subset(elephant, Sex == "M")$Height)
+mean(subset(elephant, Sex == "F")$Height)
+sd(elephant$Height[elephant$Sex == "M"])
+sd(elephant$Height[elephant$Sex == "F"])
+
+
+```
+
+
+O desvio padrão das fêmeas é menor, logo o grupo das fêmeas é mais homogênio que os dos machos. A altura dos machos é mais dispersa, por isso a média de altura das fêmeas é maior.
+
+5.
+
+```{r}
+graph2 <- ggplot(elephant, aes(x = reorder(Sex, Height, FUN = median), y = Height, fill = Sex))#3d5a80
+
+graph2 + geom_boxplot() + scale_fill_manual(values = c("#f95738", "#3d5a80"))
+```
+
+
+A dispersão da altura dos machos é maior. Existe assimetria a esquerda nas duas caixas, ou seja a maior parte das alturas estão abaixo da mediana.
+
+
+# Parte 2
+
+6.
+
+```{r}
+diabetes <- read.csv("/home/vitof/Documents/codigos/rfiles/ce01/lista_3/diabetes_012_health_indicators_BRFSS2015.csv")
+
+
+```
+
+
+7.
+```{r}
+
+glimpse(diabetes)
+
+```
+
+##### Qualitativas
+* Nominais: Diabetes_012, HighChol, HighBP, Cholcheck, Smoker, Stroke, HeartDiseaseAttack, PhysActivity, Fruits, Veggies, HvyAlcoholConsump, AnyHelathCare, DiffWalk, Sex;
+* Ordinais: Education, GenHtlh, PhysHlth, MenHtlth.
+
+##### Quantitativas 
+* Discretas: Age, Income;
+* Contínuas: BMI.
+
+8.
+
+```{r}
+
+diabetes$Sex <- factor(diabetes$Sex,
+                       levels = c(0, 1),
+                       labels = c("F", "M"))
+data <- diabetes %>% group_by(Diabetes_012, Sex) 
+ggplot(data, aes(x=Diabetes_012, fill = factor(Sex), group = Sex))+
+  geom_bar(stat="count", position = "dodge") + 
+  scale_fill_manual(values = c("#ff9f1c", "#2ec4b6"))
+```
+
+A maioria das pessoas não tem diabetes. O tipo 2 é mais comum que o tipo 1. Por esse gráfico não dá pra avaliar se a diabetes é mais comum entre homens ou mulheres.
+
+9.
+
+```{r}
+data <- diabetes %>% group_by(Diabetes_012, Sex) %>% summarize(n=n()) %>% mutate(freq=n/sum(n)) 
+
+ggplot(data, aes(x=Diabetes_012, fill = factor(Sex), group = Sex)) + geom_bar(aes(y=freq), stat="identity", position = "dodge") +
+  scale_fill_manual(values = c("#ff9f1c", "#2ec4b6"))
+
+
+```
+
+
+Usando a frequência relativa conseguimos observar que a diabetes afeta mais as mulheres que os homens.
+
+10.
+
+```{r}
+sex <- diabetes %>% group_by(BMI, Sex) %>% filter(Sex == "M")
+sex2 <- diabetes %>% group_by(BMI, Sex) %>% filter(Sex == "F")
+
+graph4 <- ggplot(sex, aes(x = BMI, fill = factor(Sex)))
+graph4 + geom_histogram(color = "#e9ecef", position = "identity", binwidth = 1) +
+  scale_fill_manual(values = c("#2ec4b6"))
+
+```
+
+```{r}
+
+graph5 <- ggplot(sex2, aes(x = BMI, fill = factor(Sex)))
+graph5 + geom_histogram(color = "#e9ecef", position = "identity", binwidth = 1) +
+  scale_fill_manual(values = c("#ff9f1c"))
+```
+
+
+As mulheres tem o BMI maior que o dos homens. Isso pode explicar o fato das mulheres serem mais afetadas pela diabetes que os homens. Mas somente por esses dois gráficos não é possível afirmar que existe associação entre essas duas variáveis.
+
+11.
+
+```{r}
+
+graph6 <- ggplot(sex, aes(x = BMI, fill = factor(Sex)))
+graph6 + geom_histogram(aes(y = after_stat(count / sum(count))), binwidth = 1) +
+  geom_density(alpha = 0.3) +
+  scale_fill_manual(values = c("#ff9f1c"))
+
+graph7 <- ggplot(sex2, aes(x = BMI, fill = factor(Sex)))
+graph7 + geom_histogram(aes(y = after_stat(count / sum(count))), binwidth = 1) +
+  geom_density(alpha = 0.3) +
+  scale_fill_manual(values = c("#2ec4b6"))
+```
+A altura relativa muda porque na curva de densidade a área sob a curva e acima de qualquer intervalo é proporcional a todas as observações feitas naquele intervalo. Os picos mostram aonde a maior parte dos valores estão concentrados e a concentração de dados dimunui a medida que se aproxima das extremidades.
+
+# Parte 3
+
+12.
+Quando tentei colocar o Reino Unido recebi esse erro: _unable to find an inherited method for function ‘grobify’ for signature ‘"NULL"’_. Ao tirar o Reino Unido consegui renderizar a animação sem problemas. Na página do Git Hub outras pessoas reportaram esse bug quando usam 'ggflags' com países europeus. Portanto não consegui achar uma resposta para consertar esse bug. Por isso resolvi retirar o Reino Unido.
+
+```{r}
+if ( !require("pacman") ) install.packages( "pacman" )
+if ( !require("ggflags") ) devtools::install_github( 'rensa/ggflags', force = T)
+library( ggflags )
+library(pacman)
+pacman::p_load( "devtools", "gganimate", "gapminder", "gifski", "htmltools" )
+
+```
+
+
+```{r}
+data( "gapminder" )
+lybia <- filter( gapminder, country == "Libya" )
+brasil <- filter( gapminder, country == "Brazil" )
+southafrica <- filter( gapminder, country == "South Africa" )
+newzealand <- filter( gapminder, country == "New Zealand" )
+china <- filter( gapminder, country == "China" )
+
+g <- ggplot( gapminder, 
+             aes(gdpPercap, lifeExp, size = pop, color=continent, frame = year)) +
+  geom_point( alpha = 0.7 ) +
+  scale_size( range = c(2, 12) ) +
+  labs( title = 'Year: {frame_time}', 
+        x = 'PIB per capita', 
+        y = 'Expectativa de vida' ) +
+  transition_time( year ) +
+  geom_flag( data=brasil, country="br", show.legend=F ) +
+  geom_flag( data=lybia, country="ly", show.legend=F ) +
+  geom_flag( data=southafrica, country="za", show.legend=F ) +
+  geom_flag( data=newzealand, country="nz", show.legend=F ) +
+  geom_flag( data=china, country="cn", show.legend=F )
+
+animate( g, 
+         height = 4, width = 6, units = "in",
+         nframes=100, fps=10, res = 150,
+         duration = 15, start_pause=5, end_pause=25 )
+
+```
+
+
